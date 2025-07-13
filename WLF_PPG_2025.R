@@ -30,16 +30,15 @@ layer <- paste0("C:/Users/luisr/SPC/SDD GIS - Documents/Pacific PopGrid/UPDATE_2
 
 # 2. PREPARE ALL DATA INPUT ===================================================
 # Import data input
-hhloc <- vect(paste0(dd,"/layers/pts2018.gpkg"))
-hhloc <- hhloc %>% 
-  rename(t_pop = tpop2018)
+hhloc <- read.csv(paste0(output,"RPWF_2023_BI_base_finale points GPS_modified for grid.csv"))
+hhloc <- st_as_sf(hhloc, wkt = "wkt", crs = 4326)
 
 # Bring Zone layer to avoid points excluded
 zone <- vect(paste0(dd,"/layers/zone.gpkg"))
 
 # 3. Define Population Growth Rates parameters and grid parametes ============
-pop_2018 <- sum(hhloc$t_pop) 
-pop_2018 # calculated from the combination of both listings
+pop_2023 <- nrow(hhloc)
+pop_2023 # calculated from census database
 
 popstat <- read.csv("pop_stat.csv") # population from .STAT with the year projected population
 
@@ -65,10 +64,13 @@ rast100m
 # 4. PROCESS DATA TO GENERATE THE POPULATION GRID ============================
 
 pts <- hhloc
+# we have a location for each person, we create a t_pop = 1 for all rows to continue with calculations
+pts$t_pop <- 1
+sum(pts$t_pop)
 
 # 3.1 RASTERIZE census dataset (Check that pop field is integer) ----
 # To check that rasterize and pop projection works creating census year population grid
-rastpop2021_100m <- rasterize(st_as_sf(pts),rast100m,'t_pop',fun=sum)
+rastpop2021_100m <- rasterize(pts,rast100m,'t_pop',fun=sum)
 rastpop2021_100m
 totpop2021_count <- cellStats(rastpop2021_100m, 'sum')
 totpop2021_count
@@ -92,7 +94,7 @@ pts_2025
 # total population census 
 
 stand_d <- pts_2025 %>% 
-  mutate_at(vars(t_pop),function(x)x/pop_2018)
+  mutate_at(vars(t_pop),function(x)x/pop_2023)
 
 # Check
 sum(stand_d$t_pop)
@@ -226,45 +228,45 @@ saveWidget(map_sat, file = paste0(dmap,country,"_ppg_2025.html"), selfcontained 
 
 # 4.3 Create atlas map to display population grid at Division level so we can better visualize it -----
 # Iterate maps over the two islands
-ab <- ab <- st_read(paste0(layer,"WLF_island_4326.gpkg")) 
-for (i in 1:nrow(ab)) {
-  div <- ab[i, ]  # Subset the administrative boundaries data for the current country
-  
-  # Set extent of each map
-  extent <- extent(div)
-  # Get division name
-  division_name <- toupper(unique(div$i_name))
-  
-  # Create a map for the current country
-  map <- leaflet() %>%
-    addControl(html = paste("<h3>WALLIS & FUTUNA - 2025 Population Grid</h3>", "<h4>", paste0('Islands: ',division_name) , "</h4>"),
-               position = "topright") %>%
-    addProviderTiles("Esri.WorldImagery") %>%  # Choose your preferred tile provider
-    addRasterImage(raster_data,
-                   colors = colorPalette,
-                   opacity = 0.8) %>%
-    addPolygons(data = div,
-                fillColor = "transparent",
-                color = "white",
-                label = ~i_name,
-                labelOptions = labelOptions(noHide = TRUE,
-                                            textOnly = TRUE,
-                                            textsize = "18px",
-                                            style = list(color = "black",
-                                                         font.weight = "bold",
-                                                         textShadow = "1px 1px #FFFFFF"))) %>%  # Administrative boundaries
-    addLegend(
-      position = "topright",  # Change legend position to "topright"
-      pal = colorPalette,  # Use the reversed color palette
-      values = values(raster_data),
-      title = "Population Density <br> (pers./ha)",
-      opacity = 0.8
-    )
-  
-  # Set the map extent around current division
-  map <- map %>% fitBounds(extent[1], extent[3], extent[2], extent[4])
-  
-  # Save the map to a separate file
-  filename <- paste0(dmap,country,"_", division_name, "_map.html")  # Construct the filename
-  saveWidget(map, file = filename, selfcontained = TRUE)  # Save the map
-}
+# ab <- ab <- st_read(paste0(layer,"WLF_island_4326.gpkg")) 
+# for (i in 1:nrow(ab)) {
+#   div <- ab[i, ]  # Subset the administrative boundaries data for the current country
+#   
+#   # Set extent of each map
+#   extent <- extent(div)
+#   # Get division name
+#   division_name <- toupper(unique(div$i_name))
+#   
+#   # Create a map for the current country
+#   map <- leaflet() %>%
+#     addControl(html = paste("<h3>WALLIS & FUTUNA - 2025 Population Grid</h3>", "<h4>", paste0('Islands: ',division_name) , "</h4>"),
+#                position = "topright") %>%
+#     addProviderTiles("Esri.WorldImagery") %>%  # Choose your preferred tile provider
+#     addRasterImage(raster_data,
+#                    colors = colorPalette,
+#                    opacity = 0.8) %>%
+#     addPolygons(data = div,
+#                 fillColor = "transparent",
+#                 color = "white",
+#                 label = ~i_name,
+#                 labelOptions = labelOptions(noHide = TRUE,
+#                                             textOnly = TRUE,
+#                                             textsize = "18px",
+#                                             style = list(color = "black",
+#                                                          font.weight = "bold",
+#                                                          textShadow = "1px 1px #FFFFFF"))) %>%  # Administrative boundaries
+#     addLegend(
+#       position = "topright",  # Change legend position to "topright"
+#       pal = colorPalette,  # Use the reversed color palette
+#       values = values(raster_data),
+#       title = "Population Density <br> (pers./ha)",
+#       opacity = 0.8
+#     )
+#   
+#   # Set the map extent around current division
+#   map <- map %>% fitBounds(extent[1], extent[3], extent[2], extent[4])
+#   
+#   # Save the map to a separate file
+#   filename <- paste0(dmap,country,"_", division_name, "_map.html")  # Construct the filename
+#   saveWidget(map, file = filename, selfcontained = TRUE)  # Save the map
+# }

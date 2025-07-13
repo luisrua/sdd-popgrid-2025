@@ -12,23 +12,23 @@
 
 # 1. SETTINGS ================================================================
 # setup script that loads libraries and resolve conflict between functions 
-source("C:/Users/pfiu/Documents/FJI_PPG_disag_2023/UPDATE_2023/setup.R")
-library(readxl)
+source("setup.R")
+
 # No need to establish conditions to avoid expensive process, small datasets.
 
-# Set paths to data input / output NEED TO UPDATE THIS FOR A NEW ONE FOR 2025
+# Set paths to data input / output
 
-wd <- "C:/Users/pfiu/Documents/FJI_PPG_disag_2023/UPDATE_2023" # FIU here use the directory where you R script is stored
+wd <- "C:/git/spc/sdd-popgrid-2025"
 setwd(wd)
 
 # Country code to name output data and other files
 country <- 'FJI'
+year <- "2025"
 
-
-# Data directory
-dd <- paste0("C:/Users/pfiu/Documents/FJI_PPG_disag_2023/UPDATE_2023/",country,"/") #
-output <- paste0("C:/Users/luisr/SPC/SDD GIS - Documents/Pacific PopGrid/UPDATE_2025/",country,"/") # change this one for the folder corresponding to the 2025 dataset please
-
+# we keep using what we have in 2023 update as it is the latest data available for the input
+dd <- paste0("C:/Users/luisr/SPC/SDD GIS - Documents/Pacific PopGrid/UPDATE_2023/",country,"/")
+output <- paste0("C:/Users/luisr/SPC/SDD GIS - Documents/Pacific PopGrid/UPDATE_2025/",country,"/")
+dmap <- paste0("C:/Users/luisr/SPC/SDD GIS - Documents/Pacific PopGrid/UPDATE_2025/",country,"/maps/")
 
 # And check on all the paths included and replace them by the ones that work for your machine, if paste0 function gives you problems you can just replace that by the complete
 # path to the input and output data.
@@ -39,7 +39,7 @@ output <- paste0("C:/Users/luisr/SPC/SDD GIS - Documents/Pacific PopGrid/UPDATE_
 
 # 2.1 Create dataframe with total population + coordinates from PHC dataset. ----
 
-pop <- read_xlsx(paste0(dd, "tables/EA_Tables.xlsx")) # UPDATE THE PATH TO THE LOCATION OF THE COMPLETE DATASET
+pop <- read_xls("C:/Users/luisr/SPC/SDD GIS - Documents/Pacific PopGrid/UPDATE_2023/FJI/tables/EA_Tables.xls") # UPDATE THE PATH TO THE LOCATION OF THE COMPLETE DATASET
 
 ## THIS STEP IS NOT NECESSARY BUT IT SHOWS HOW TO PRODUCE THE POPULATION TABLES FROM THE ORIGINAL DATASET.
 # # Collapse to calculate total population and population by age range and sex
@@ -120,11 +120,12 @@ hhcount <- i %>%
 
 
 ## Merge hh count with the population table input
-pop_hhcount <- merge(pop,hhcount,by.x = 'eaid', by.y = 'ea2017')
+pop_hhcount <- merge(pop,hhcount,by.x = 'ea2017', by.y = 'ea2017')
 
 ## 2.5 Calculate Average Population per building for all the population columns ----
 
 ea_avpop <- pop_hhcount %>% 
+  rename(eaid = ea2017) %>% 
   as.data.frame() %>% 
   mutate_at(vars(-eaid, -hhcount),~ . / hhcount) %>% 
   rename_at(vars(-eaid, -hhcount),~ paste0(. , "_ahs")) # rename variables
@@ -245,39 +246,39 @@ raster_list <- list.files(path = paste0(output,"raster/"), pattern = ".tif$", fu
 
 # and adapt below the file names to create the target population groups
 # Load rasters.
-youth_rasters <- c(paste0(output,"raster/",country,"_f_0_2025",".tif"),
-                   paste0(output,"raster/", country,"_f_5_2025",".tif"),
-                   paste0(output,"raster/", country,"_f_10_2025",".tif"),
-                   paste0(output,"raster/", country,"_f_15_2025",".tif"),
-                   paste0(output,"raster/", country,"_m_0_2025",".tif"),
-                   paste0(output,"raster/", country,"_m_5_2025",".tif"),
-                   paste0(output,"raster/", country,"_m_10_2025",".tif"),
-                   paste0(output,"raster/", country,"_m_15_2025",".tif")
+youth_rasters <- c(paste0(output,"raster/",country,"_f_0_4_ahs_2025",".tif"),
+                   paste0(output,"raster/", country,"_f_5_9_ahs_2025",".tif"),
+                   paste0(output,"raster/", country,"_f_10_14_ahs_2025",".tif"),
+                   paste0(output,"raster/", country,"_f_15_19_ahs_2025",".tif"),
+                   paste0(output,"raster/", country,"_m_0_4_ahs_2025",".tif"),
+                   paste0(output,"raster/", country,"_m_5_9_ahs_2025",".tif"),
+                   paste0(output,"raster/", country,"_m_10_14_ahs_2025",".tif"),
+                   paste0(output,"raster/", country,"_m_15_19_ahs_2025",".tif")
 )
 
-wfag_rasters <- c(paste0(output,"raster/",country,"_f_15_2025",".tif"),
-                  paste0(output,"raster/",country,"_f_20_2025",".tif"),
-                  paste0(output,"raster/",country,"_f_25_2025",".tif"),
-                  paste0(output,"raster/",country,"_f_30_2025",".tif"),
-                  paste0(output,"raster/",country,"_f_35_2025",".tif"),
-                  paste0(output,"raster/",country,"_f_40_2025",".tif"),
-                  paste0(output,"raster/",country,"_f_45_2025",".tif")
+wfag_rasters <- c(paste0(output,"raster/",country,"_f_15_19_ahs_2025",".tif"),
+                  paste0(output,"raster/",country,"_f_20_24_ahs_2025",".tif"),
+                  paste0(output,"raster/",country,"_f_25_29_ahs_2025",".tif"),
+                  paste0(output,"raster/",country,"_f_30_34_ahs_2025",".tif"),
+                  paste0(output,"raster/",country,"_f_35_39_ahs_2025",".tif"),
+                  paste0(output,"raster/",country,"_f_40_44_ahs_2025",".tif"),
+                  paste0(output,"raster/",country,"_f_45_49_ahs_2025",".tif")
 )
 
-old_rasters <- c(paste0(output,"raster/",country,"_f_65_2025",".tif"),
-                 paste0(output,"raster/", country,"_f_70_2025",".tif"),
-                 paste0(output,"raster/", country,"_f_75_2025",".tif"),
-                 paste0(output,"raster/", country,"_f_80_2025",".tif"),
-                 paste0(output,"raster/", country,"_f_85_2025",".tif"),
-                 paste0(output,"raster/", country,"_f_90_2025",".tif"),
-                 paste0(output,"raster/", country,"_f_95_2025",".tif"),
-                 paste0(output,"raster/",country,"_m_65_2025",".tif"),
-                 paste0(output,"raster/", country,"_m_70_2025",".tif"),
-                 paste0(output,"raster/", country,"_m_75_2025",".tif"),
-                 paste0(output,"raster/", country,"_m_80_2025",".tif"),
-                 paste0(output,"raster/", country,"_m_85_2025",".tif"),
-                 paste0(output,"raster/", country,"_m_90_2025",".tif"),
-                 paste0(output,"raster/", country,"_m_95_2025",".tif")
+old_rasters <- c(paste0(output,"raster/",country,"_f_65_69_ahs_2025",".tif"),
+                 paste0(output,"raster/", country,"_f_70_74_ahs_2025",".tif"),
+                 paste0(output,"raster/", country,"_f_75_79_ahs_2025",".tif"),
+                 paste0(output,"raster/", country,"_f_80_84_ahs_2025",".tif"),
+                 paste0(output,"raster/", country,"_f_85_89_ahs_2025",".tif"),
+                 paste0(output,"raster/", country,"_f_90_94_ahs_2025",".tif"),
+                 paste0(output,"raster/", country,"_f_95_99_ahs_2025",".tif"),
+                 paste0(output,"raster/",country,"_m_65_69_ahs_2025",".tif"),
+                 paste0(output,"raster/", country,"_m_70_74_ahs_2025",".tif"),
+                 paste0(output,"raster/", country,"_m_75_79_ahs_2025",".tif"),
+                 paste0(output,"raster/", country,"_m_80_84_ahs_2025",".tif"),
+                 paste0(output,"raster/", country,"_m_85_89_ahs_2025",".tif"),
+                 paste0(output,"raster/", country,"_m_90_94_ahs_2025",".tif"),
+                 paste0(output,"raster/", country,"_m_95_99_ahs_2025",".tif")
 )
 youth_stack <- rast(youth_rasters)
 wfag_stack <- rast(wfag_rasters)
@@ -293,4 +294,4 @@ popgrid_list <- c(youth_popgrid, wfag_popgrid, old_popgrid)
 
 sums <- sapply(popgrid_list, function(r) global(r, sum, na.rm = TRUE)[1,1])
 names(sums) <- c("Youth", "wfag", "old")
-
+sums
